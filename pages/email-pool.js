@@ -12,10 +12,21 @@ export default function EmailPoolPage() {
   }, []);
 
   const fetchEmails = async () => {
-    const res = await fetch('/api/emails');
-    const data = await res.json();
-    setEmails(data || []);
-  };
+  let all = [];
+  let page = 1;
+  const per = 1000;
+
+  while (true) {
+    const res = await fetch(`/api/emails?page=${page}&per=${per}`);
+    const batch = await res.json();
+    all = [...all, ...batch];
+    if (batch.length < per) break;
+    page++;
+  }
+
+  setEmails(all);
+};
+
 
   const addEmail = async () => {
     if (!newEmail) return;
