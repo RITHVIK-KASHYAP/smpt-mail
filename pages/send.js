@@ -1831,6 +1831,314 @@
 //     </div>
 //   );
 // }
+// import { useState, useEffect, useRef } from 'react';
+// import { useRouter } from 'next/router';
+
+// export default function SendMailPage() {
+//   const router = useRouter();
+//   const [clients, setClients] = useState([]);
+//   const [emailPool, setEmailPool] = useState([]);
+//   const [subject, setSubject] = useState('');
+//   const [body, setBody] = useState('');
+//   const [files, setFiles] = useState([]);
+//   const [search, setSearch] = useState('');
+//   const sectionRefs = useRef({});
+//   const [clientRecipients, setClientRecipients] = useState([]);
+//   const [manualTo, setManualTo] = useState([
+//     { to: '', cc: [''], bcc: [''] }
+//   ]);
+//   const [showAllCc, setShowAllCc] = useState(false);
+//   const [showAllBcc, setShowAllBcc] = useState(false);
+
+//   useEffect(() => {
+//     fetch('/api/clients').then(res => res.json()).then(setClients);
+//     fetch('/api/emails').then(res => res.json()).then(setEmailPool);
+//   }, []);
+
+//   const groupClients = () => {
+//     const filtered = clients.filter(c =>
+//       c.email.toLowerCase().includes(search.toLowerCase())
+//     );
+//     const grouped = {};
+//     filtered.forEach(client => {
+//       const letter = client.email[0].toUpperCase();
+//       if (!grouped[letter]) grouped[letter] = [];
+//       grouped[letter].push(client);
+//     });
+//     return grouped;
+//   };
+
+//   const groupedClients = groupClients();
+
+//   const scrollTo = (letter) => {
+//     if (sectionRefs.current[letter]) {
+//       sectionRefs.current[letter].scrollIntoView({ behavior: 'smooth' });
+//     }
+//   };
+
+//   const toggleClientTo = (email) => {
+//     setClientRecipients(prev =>
+//       prev.some(r => r.to === email)
+//         ? prev.filter(r => r.to !== email)
+//         : [...prev, { to: email, cc: [], bcc: [] }]
+//     );
+//   };
+
+//   const toggleClientCC = (toEmail, ccEmail) => {
+//     setClientRecipients(prev => prev.map(r => {
+//       if (r.to !== toEmail) return r;
+//       return {
+//         ...r,
+//         cc: r.cc.includes(ccEmail) ? r.cc.filter(e => e !== ccEmail) : [...r.cc, ccEmail]
+//       };
+//     }));
+//   };
+
+//   const toggleClientBCC = (toEmail, bccEmail) => {
+//     setClientRecipients(prev => prev.map(r => {
+//       if (r.to !== toEmail) return r;
+//       return {
+//         ...r,
+//         bcc: r.bcc.includes(bccEmail) ? r.bcc.filter(e => e !== bccEmail) : [...r.bcc, bccEmail]
+//       };
+//     }));
+//   };
+
+//   const getDomain = email => email.split('@')[1];
+
+//   const updateManualField = (i, field, value) => {
+//     setManualTo(prev => {
+//       const updated = [...prev];
+//       updated[i][field] = value;
+//       return updated;
+//     });
+//   };
+
+//   const updateManualNested = (i, type, index, value) => {
+//     setManualTo(prev => {
+//       const updated = [...prev];
+//       updated[i][type][index] = value;
+//       return updated;
+//     });
+//   };
+
+//   const addManual = () => {
+//     setManualTo(prev => [...prev, { to: '', cc: [''], bcc: [''] }]);
+//   };
+
+//   const removeManual = (i) => {
+//     setManualTo(prev => prev.filter((_, idx) => idx !== i));
+//   };
+
+//   const addNested = (i, type) => {
+//     setManualTo(prev => {
+//       const updated = [...prev];
+//       updated[i][type].push('');
+//       return updated;
+//     });
+//   };
+
+//   const removeNested = (i, type, index) => {
+//     setManualTo(prev => {
+//       const updated = [...prev];
+//       updated[i][type] = updated[i][type].filter((_, idx) => idx !== index);
+//       return updated;
+//     });
+//   };
+
+//   const sendMail = async () => {
+//     const recipients = [
+//       ...clientRecipients,
+//       ...manualTo
+//         .filter(r => r.to.trim())
+//         .map(r => ({
+//           to: r.to.trim(),
+//           cc: r.cc.filter(Boolean).map(e => e.trim()),
+//           bcc: r.bcc.filter(Boolean).map(e => e.trim())
+//         }))
+//     ];
+
+//     if (recipients.length === 0) return alert("At least one recipient required.");
+//     if (!body && files.length === 0) return alert("Body or attachment required.");
+
+//     const formData = new FormData();
+//     formData.append('subject', subject);
+//     formData.append('body', body);
+//     formData.append('recipients', JSON.stringify(recipients));
+//     files.forEach(f => formData.append('file', f));
+
+//     const res = await fetch('/api/sendMail', { method: 'POST', body: formData });
+//     const result = await res.json();
+//     alert(result.message || result.error);
+
+//     // Save all used emails to pool
+//     const used = new Set();
+//     recipients.forEach(r => {
+//       used.add(r.to);
+//       r.cc.forEach(c => used.add(c));
+//       r.bcc.forEach(b => used.add(b));
+//     });
+
+//     for (const email of used) {
+//       if (!emailPool.some(e => e.email === email)) {
+//         await fetch('/api/emails', {
+//           method: 'POST',
+//           headers: { 'Content-Type': 'application/json' },
+//           body: JSON.stringify({ email })
+//         });
+//       }
+//     }
+//   };
+
+//   return (
+//     <div style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
+//       <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+//         <button onClick={() => router.push('/clients')}>Manage Clients</button>
+//         <button onClick={() => router.push('/email-pool')}>Email Pool</button>
+//       </div>
+
+//       <h1>Send Email</h1>
+
+//       <label>Subject</label>
+//       <input value={subject} onChange={e => setSubject(e.target.value)} style={{ width: '100%' }} />
+
+//       <label>Body</label>
+//       <textarea value={body} onChange={e => setBody(e.target.value)} style={{ width: '100%', height: '100px' }} />
+
+//       <label>Attachments</label>
+//       <input type="file" multiple onChange={(e) => setFiles([...e.target.files])} />
+
+//       <input
+//         placeholder="Search clients..."
+//         value={search}
+//         onChange={(e) => setSearch(e.target.value)}
+//         style={{ width: '100%', margin: '20px 0' }}
+//       />
+
+//       <h3>Clients</h3>
+//       {Object.keys(groupedClients).sort().map(letter => (
+//         <div key={letter} ref={el => sectionRefs.current[letter] = el}>
+//           <h4>{letter}</h4>
+//           {groupedClients[letter].map(client => (
+//             <div key={client.email}>
+//               <label>
+//                 <input
+//                   type="checkbox"
+//                   checked={clientRecipients.some(r => r.to === client.email)}
+//                   onChange={() => toggleClientTo(client.email)}
+//                 />
+//                 {client.email}
+//               </label>
+//               {clientRecipients.find(r => r.to === client.email) && (
+//                 <div style={{ marginLeft: '20px' }}>
+//                   <div>
+//                     <b>CC:</b>
+//                     {(showAllCc ? clients : clients.filter(c => getDomain(c.email) === getDomain(client.email)))
+//                       .map(cc => (
+//                         <label key={`cc-${cc.email}`} style={{ marginLeft: 10 }}>
+//                           <input
+//                             type="checkbox"
+//                             checked={clientRecipients.find(r => r.to === client.email)?.cc.includes(cc.email)}
+//                             onChange={() => toggleClientCC(client.email, cc.email)}
+//                           /> {cc.email}
+//                         </label>
+//                       ))}
+//                     {!showAllCc && (
+//                       <button onClick={() => setShowAllCc(true)}>Show All</button>
+//                     )}
+//                   </div>
+//                   <div>
+//                     <b>BCC:</b>
+//                     {(showAllBcc ? clients : clients.filter(c => getDomain(c.email) === getDomain(client.email)))
+//                       .map(bcc => (
+//                         <label key={`bcc-${bcc.email}`} style={{ marginLeft: 10 }}>
+//                           <input
+//                             type="checkbox"
+//                             checked={clientRecipients.find(r => r.to === client.email)?.bcc.includes(bcc.email)}
+//                             onChange={() => toggleClientBCC(client.email, bcc.email)}
+//                           /> {bcc.email}
+//                         </label>
+//                       ))}
+//                     {!showAllBcc && (
+//                       <button onClick={() => setShowAllBcc(true)}>Show All</button>
+//                     )}
+//                   </div>
+//                 </div>
+//               )}
+//             </div>
+//           ))}
+//         </div>
+//       ))}
+
+//       <h3 style={{ marginTop: '2rem' }}>Manual Recipients</h3>
+
+//       {manualTo.map((row, i) => (
+//         <div key={i} style={{ border: '1px solid #ccc', padding: '1rem', marginBottom: '1rem' }}>
+//           <div>
+//             <label><b>To:</b></label>
+//             <input
+//               list="emailSuggestions"
+//               value={row.to}
+//               onChange={(e) => updateManualField(i, 'to', e.target.value)}
+//               placeholder="To email"
+//               style={{ width: '100%' }}
+//             />
+//           </div>
+
+//           <div>
+//             <label><b>Cc:</b></label>
+//             {row.cc.map((cc, j) => (
+//               <div key={j} style={{ display: 'flex', gap: '10px', marginTop: '5px' }}>
+//                 <input
+//                   list="emailSuggestions"
+//                   value={cc}
+//                   onChange={(e) => updateManualNested(i, 'cc', j, e.target.value)}
+//                   placeholder="Cc email"
+//                   style={{ flex: 1 }}
+//                 />
+//                 <button onClick={() => removeNested(i, 'cc', j)}>Remove</button>
+//               </div>
+//             ))}
+//             <button onClick={() => addNested(i, 'cc')}>Add Cc</button>
+//           </div>
+
+//           <div>
+//             <label><b>Bcc:</b></label>
+//             {row.bcc.map((bcc, j) => (
+//               <div key={j} style={{ display: 'flex', gap: '10px', marginTop: '5px' }}>
+//                 <input
+//                   list="emailSuggestions"
+//                   value={bcc}
+//                   onChange={(e) => updateManualNested(i, 'bcc', j, e.target.value)}
+//                   placeholder="Bcc email"
+//                   style={{ flex: 1 }}
+//                 />
+//                 <button onClick={() => removeNested(i, 'bcc', j)}>Remove</button>
+//               </div>
+//             ))}
+//             <button onClick={() => addNested(i, 'bcc')}>Add Bcc</button>
+//           </div>
+
+//           {manualTo.length > 1 && (
+//             <button onClick={() => removeManual(i)} style={{ marginTop: '10px', color: 'red' }}>
+//               Remove Recipient
+//             </button>
+//           )}
+//         </div>
+//       ))}
+
+//       <datalist id="emailSuggestions">
+//         {emailPool.map(e => <option key={e.email} value={e.email} />)}
+//       </datalist>
+
+//       <button onClick={addManual}>Add Manual To</button>
+
+//       <div style={{ marginTop: '2rem' }}>
+//         <button onClick={sendMail}>Send Email</button>
+//       </div>
+//     </div>
+//   );
+// }
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 
@@ -1844,15 +2152,30 @@ export default function SendMailPage() {
   const [search, setSearch] = useState('');
   const sectionRefs = useRef({});
   const [clientRecipients, setClientRecipients] = useState([]);
-  const [manualTo, setManualTo] = useState([
-    { to: '', cc: [''], bcc: [''] }
-  ]);
+  const [manualTo, setManualTo] = useState([{ to: '', cc: [''], bcc: [''] }]);
   const [showAllCc, setShowAllCc] = useState(false);
   const [showAllBcc, setShowAllBcc] = useState(false);
 
   useEffect(() => {
     fetch('/api/clients').then(res => res.json()).then(setClients);
-    fetch('/api/emails').then(res => res.json()).then(setEmailPool);
+
+    const fetchAllEmails = async () => {
+      let all = [];
+      let page = 1;
+      const per = 1000;
+
+      while (true) {
+        const res = await fetch(`/api/emails?page=${page}&per=${per}`);
+        const batch = await res.json();
+        all = [...all, ...batch];
+        if (batch.length < per) break;
+        page++;
+      }
+
+      setEmailPool(all);
+    };
+
+    fetchAllEmails();
   }, []);
 
   const groupClients = () => {
@@ -1971,7 +2294,7 @@ export default function SendMailPage() {
     const result = await res.json();
     alert(result.message || result.error);
 
-    // Save all used emails to pool
+    // Save new emails to pool
     const used = new Set();
     recipients.forEach(r => {
       used.add(r.to);
