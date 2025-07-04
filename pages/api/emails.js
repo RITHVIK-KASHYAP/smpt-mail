@@ -34,7 +34,7 @@ export default async function handler(req, res) {
 
   if (req.method === 'GET') {
     const page = parseInt(req.query.page || '1');
-    const per = parseInt(req.query.per || '5000');
+    const per = parseInt(req.query.per || '1000');
     const from = (page - 1) * per;
     const to = from + per - 1;
 
