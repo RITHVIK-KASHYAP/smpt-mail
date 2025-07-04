@@ -673,8 +673,203 @@
 //   );
 // }
 
+// import { useState, useEffect, useRef } from 'react';
+// import { useRouter } from 'next/router';
+
+// export default function SendMailPage() {
+//   const router = useRouter();
+//   const [clients, setClients] = useState([]);
+//   const [recipients, setRecipients] = useState([]);
+//   const [subject, setSubject] = useState('');
+//   const [body, setBody] = useState('');
+//   const [files, setFiles] = useState([]);
+//   const [search, setSearch] = useState('');
+//   const [showAllCc, setShowAllCc] = useState(false);
+//   const [showAllBcc, setShowAllBcc] = useState(false);
+//   const sectionRefs = useRef({});
+
+//   useEffect(() => {
+//     fetch('/api/clients')
+//       .then(res => res.json())
+//       .then(setClients);
+//   }, []);
+
+//   const groupClients = () => {
+//     const filtered = clients.filter(c =>
+//       c.email.toLowerCase().includes(search.toLowerCase())
+//     );
+//     const grouped = {};
+//     filtered.forEach(client => {
+//       const letter = client.email[0].toUpperCase();
+//       if (!grouped[letter]) grouped[letter] = [];
+//       grouped[letter].push(client);
+//     });
+//     return grouped;
+//   };
+
+//   const groupedClients = groupClients();
+
+//   const scrollTo = (letter) => {
+//     if (sectionRefs.current[letter]) {
+//       sectionRefs.current[letter].scrollIntoView({ behavior: 'smooth' });
+//     }
+//   };
+
+//   const toggleTo = (email) => {
+//     setRecipients(prev =>
+//       prev.some(r => r.to === email)
+//         ? prev.filter(r => r.to !== email)
+//         : [...prev, { to: email, cc: [], bcc: [] }]
+//     );
+//   };
+
+//   const toggleCC = (toEmail, ccEmail) => {
+//     setRecipients(prev => prev.map(r => {
+//       if (r.to !== toEmail) return r;
+//       return {
+//         ...r,
+//         cc: r.cc.includes(ccEmail)
+//           ? r.cc.filter(e => e !== ccEmail)
+//           : [...r.cc, ccEmail]
+//       };
+//     }));
+//   };
+
+//   const toggleBCC = (toEmail, bccEmail) => {
+//     setRecipients(prev => prev.map(r => {
+//       if (r.to !== toEmail) return r;
+//       return {
+//         ...r,
+//         bcc: r.bcc.includes(bccEmail)
+//           ? r.bcc.filter(e => e !== bccEmail)
+//           : [...r.bcc, bccEmail]
+//       };
+//     }));
+//   };
+
+//   const getDomain = email => email.split('@')[1];
+
+//   const sendMail = async () => {
+//     if (recipients.length === 0) return alert("Select at least one 'To' recipient.");
+//     if (!body && files.length === 0) return alert("Provide either a message body or attachments.");
+
+//     const formData = new FormData();
+//     formData.append('subject', subject || '');
+//     formData.append('body', body || '');
+//     formData.append('recipients', JSON.stringify(recipients));
+//     files.forEach(f => formData.append('file', f));
+
+//     const res = await fetch('/api/sendMail', {
+//       method: 'POST',
+//       body: formData,
+//     });
+
+//     const data = await res.json();
+//     alert(data.message || data.error);
+//   };
+
+//   return (
+//     <div style={{ padding: '2rem', fontFamily: 'sans-serif', position: 'relative' }}>
+//       <button onClick={() => router.push('/clients')} style={{ marginBottom: '20px' }}>
+//         Manage Clients
+//       </button>
+
+//       <h1>Send Email</h1>
+
+//       <input
+//         placeholder="Search clients..."
+//         value={search}
+//         onChange={(e) => setSearch(e.target.value)}
+//         style={{ width: '100%', marginBottom: '15px' }}
+//       />
+
+//       <label><b>Subject:</b></label>
+//       <input value={subject} onChange={e => setSubject(e.target.value)} style={{ width: '100%' }} />
+
+//       <label><b>Body:</b></label>
+//       <textarea value={body} onChange={e => setBody(e.target.value)} style={{ width: '100%', height: '100px' }} />
+
+//       <label><b>Attachments:</b></label>
+//       <input type="file" multiple onChange={(e) => setFiles([...e.target.files])} />
+
+//       <h3>To:</h3>
+//       {Object.keys(groupedClients).sort().map(letter => (
+//         <div key={letter} ref={el => sectionRefs.current[letter] = el}>
+//           <h4>{letter}</h4>
+//           <ul style={{ listStyle: 'none', paddingLeft: 0 }}>
+//             {groupedClients[letter].map(client => (
+//               <li key={client.email}>
+//                 <label>
+//                   <input
+//                     type="checkbox"
+//                     checked={recipients.some(r => r.to === client.email)}
+//                     onChange={() => toggleTo(client.email)}
+//                   /> {client.email}
+//                 </label>
+//                 {recipients.find(r => r.to === client.email) && (
+//                   <>
+//                     <div style={{ marginLeft: '20px' }}>
+//                       <b>CC:</b>
+//                       {(showAllCc ? clients : clients.filter(c => getDomain(c.email) === getDomain(client.email)))
+//                         .map(cc => (
+//                           <label key={`cc-${client.email}-${cc.email}`} style={{ marginLeft: '10px' }}>
+//                             <input
+//                               type="checkbox"
+//                               checked={recipients.find(r => r.to === client.email)?.cc.includes(cc.email)}
+//                               onChange={() => toggleCC(client.email, cc.email)}
+//                             /> {cc.email}
+//                           </label>
+//                         ))}
+//                       {!showAllCc && (
+//                         <button onClick={() => setShowAllCc(true)} style={{ marginLeft: 10 }}>
+//                           Show All
+//                         </button>
+//                       )}
+//                     </div>
+//                     <div style={{ marginLeft: '20px' }}>
+//                       <b>BCC:</b>
+//                       {(showAllBcc ? clients : clients.filter(c => getDomain(c.email) === getDomain(client.email)))
+//                         .map(bcc => (
+//                           <label key={`bcc-${client.email}-${bcc.email}`} style={{ marginLeft: '10px' }}>
+//                             <input
+//                               type="checkbox"
+//                               checked={recipients.find(r => r.to === client.email)?.bcc.includes(bcc.email)}
+//                               onChange={() => toggleBCC(client.email, bcc.email)}
+//                             /> {bcc.email}
+//                           </label>
+//                         ))}
+//                       {!showAllBcc && (
+//                         <button onClick={() => setShowAllBcc(true)} style={{ marginLeft: 10 }}>
+//                           Show All
+//                         </button>
+//                       )}
+//                     </div>
+//                   </>
+//                 )}
+//               </li>
+//             ))}
+//           </ul>
+//         </div>
+//       ))}
+
+//       <div style={{
+//         position: 'fixed', right: '10px', top: '120px',
+//         display: 'flex', flexDirection: 'column', fontSize: '14px'
+//       }}>
+//         {'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map(l => (
+//           <button key={l} onClick={() => scrollTo(l)}>{l}</button>
+//         ))}
+//       </div>
+
+//       <button onClick={sendMail} style={{ marginTop: '30px' }}>
+//         Send Email
+//       </button>
+//     </div>
+//   );
+// }
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
+import EmailPoolSelector from '../components/EmailPoolSelector'; // ← adjust path if needed
 
 export default function SendMailPage() {
   const router = useRouter();
@@ -684,9 +879,10 @@ export default function SendMailPage() {
   const [body, setBody] = useState('');
   const [files, setFiles] = useState([]);
   const [search, setSearch] = useState('');
-  const [showAllCc, setShowAllCc] = useState(false);
-  const [showAllBcc, setShowAllBcc] = useState(false);
   const sectionRefs = useRef({});
+
+  const [showAllCc, setShowAllCc] = useState({});
+  const [showAllBcc, setShowAllBcc] = useState({});
 
   useEffect(() => {
     fetch('/api/clients')
@@ -810,7 +1006,9 @@ export default function SendMailPage() {
                   <>
                     <div style={{ marginLeft: '20px' }}>
                       <b>CC:</b>
-                      {(showAllCc ? clients : clients.filter(c => getDomain(c.email) === getDomain(client.email)))
+                      {(showAllCc[client.email]
+                        ? clients
+                        : clients.filter(c => getDomain(c.email) === getDomain(client.email)))
                         .map(cc => (
                           <label key={`cc-${client.email}-${cc.email}`} style={{ marginLeft: '10px' }}>
                             <input
@@ -820,15 +1018,17 @@ export default function SendMailPage() {
                             /> {cc.email}
                           </label>
                         ))}
-                      {!showAllCc && (
-                        <button onClick={() => setShowAllCc(true)} style={{ marginLeft: 10 }}>
+                      {!showAllCc[client.email] && (
+                        <button onClick={() => setShowAllCc(prev => ({ ...prev, [client.email]: true }))}>
                           Show All
                         </button>
                       )}
                     </div>
                     <div style={{ marginLeft: '20px' }}>
                       <b>BCC:</b>
-                      {(showAllBcc ? clients : clients.filter(c => getDomain(c.email) === getDomain(client.email)))
+                      {(showAllBcc[client.email]
+                        ? clients
+                        : clients.filter(c => getDomain(c.email) === getDomain(client.email)))
                         .map(bcc => (
                           <label key={`bcc-${client.email}-${bcc.email}`} style={{ marginLeft: '10px' }}>
                             <input
@@ -838,8 +1038,8 @@ export default function SendMailPage() {
                             /> {bcc.email}
                           </label>
                         ))}
-                      {!showAllBcc && (
-                        <button onClick={() => setShowAllBcc(true)} style={{ marginLeft: 10 }}>
+                      {!showAllBcc[client.email] && (
+                        <button onClick={() => setShowAllBcc(prev => ({ ...prev, [client.email]: true }))}>
                           Show All
                         </button>
                       )}
@@ -860,6 +1060,32 @@ export default function SendMailPage() {
           <button key={l} onClick={() => scrollTo(l)}>{l}</button>
         ))}
       </div>
+
+      <EmailPoolSelector
+        onAddTo={(email) =>
+          setRecipients(prev => [...prev, { to: email, cc: [], bcc: [] }])
+        }
+        onAddCc={(email) => {
+          const last = recipients.length - 1;
+          if (last >= 0) {
+            setRecipients(prev => {
+              const updated = [...prev];
+              updated[last].cc.push(email);
+              return updated;
+            });
+          }
+        }}
+        onAddBcc={(email) => {
+          const last = recipients.length - 1;
+          if (last >= 0) {
+            setRecipients(prev => {
+              const updated = [...prev];
+              updated[last].bcc.push(email);
+              return updated;
+            });
+          }
+        }}
+      />
 
       <button onClick={sendMail} style={{ marginTop: '30px' }}>
         Send Email
