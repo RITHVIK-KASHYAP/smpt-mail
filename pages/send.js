@@ -869,7 +869,7 @@
 // }
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
-import EmailPoolSelector from '../components/EmailPoolSelector'; // ← adjust path if needed
+import EmailPoolSelector from '../api/EmailPoolSelector'; // ← adjust path if needed
 
 export default function SendMailPage() {
   const router = useRouter();
